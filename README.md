@@ -4,6 +4,7 @@ Want to troll your friends with a fakeban from a bot on Discord? Here it is!
 
 - 💖 Made With Vue and Love.
 
+Available on https://fakeban.vercel.app
 ## Build Setup (For Hackers:tm:)
 
 ```bash
