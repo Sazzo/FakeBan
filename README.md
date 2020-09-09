@@ -1,6 +1,10 @@
 # FakeBan
 
-## Build Setup
+Want to troll your friends with a fakeban from a bot on Discord? Here it is!
+
+- 💖 Made With Vue and Love.
+
+## Build Setup (For Hackers:tm:)
 
 ```bash
 # install dependencies
