@@ -1,46 +1,88 @@
 <template>
   <div class="container">
     <TrollFace />
-    <form onsubmit="return false" @submit-prevent="createAndSend">
+    <form onsubmit="return false" @submit-prevent="createAndSend()">
       <p v-if="error">
         {{ error }}
       </p>
       <div class="field">
-        <label class="label">URL da Webhook</label>
+        <label class="label">Qual é o bot desejado?</label>
         <div class="control">
-          <input v-model="url" class="input" type="text" placeholder="URL da Webhook" required="true">
+          <div class="select">
+            <select v-model="bot">
+              <option>Loritta</option>
+              <option>UnbeliavaBoat</option>
+              <option>MEE6</option>
+              <option>Custom</option>
+            </select>
+          </div>
         </div>
       </div>
-      <div class="field">
-        <label class="label">Nome da Webhook (Opcional)</label>
-        <div class="control">
-          <input v-model="name" class="input" type="text" placeholder="Nome da Webhook">
+      <div v-if="bot" class="fancyFields">
+        <div class="field">
+          <label class="label">URL da Webhook</label>
+          <div class="control">
+            <input v-model="url" class="input" type="text" placeholder="URL da Webhook" required="true">
+          </div>
         </div>
-      </div>
-      <div class="field">
-        <label class="label">Avatar da Webhook (Opcional)</label>
-        <div class="control">
-          <input v-model="avatar" class="input" type="url" placeholder="Avatar da Webhook">
+        <div v-if="bot === `Custom`" class="optional">
+          <div class="field">
+            <label class="label">Nome da Webhook</label>
+            <div class="control">
+              <input v-model="name" class="input" type="text" placeholder="Nome da Webhook" required="true">
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Avatar da Webhook</label>
+            <div class="control">
+              <input v-model="avatar" class="input" type="url" placeholder="Avatar da Webhook" required="true">
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Mensagem</label>
+            <div class="control">
+              <input v-model="message" class="input" type="text" placeholder="Mensagem" required="true">
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="field">
-        <label class="label">Usuário a ser banido</label>
-        <div class="control">
-          <input v-model="userId" class="input" type="number" placeholder="ID do Usuário">
+        <div v-if="bot === `MEE6`" class="mee6Fields">
+          <div class="field">
+            <label class="label">Avatar do Usuário</label>
+            <div class="control">
+              <input v-model="UserAvatar" class="input" type="url" placeholder="Avatar do Usuário" required="true">
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Razão</label>
+            <div class="control">
+              <input v-model="reason" class="input" type="text" placeholder="Razão" required="true">
+            </div>
+          </div>
         </div>
+        <div class="field" v-if="bot != `Custom`">
+          <label v-if="bot != `MEE6`" class="label">Usuário a ser banido</label>
+          <label v-else class="label">Usuário a ser banido (Exemplo: sazz#0002)</label>
+          <div v-if="bot != `MEE6`" class="control">
+            <input v-model="userId" class="input" type="number" placeholder="ID do Usuário" required="true">
+          </div>
+          <div v-else class="control">
+            <input v-model="userTag" class="input" type="text" placeholder="Username#Tag" required="true">
+          </div>
+        </div>
+        <button class="button" type="submit" @click="createAndSend">
+          Enviar
+        </button>
       </div>
-      <button class="button" @click="createAndSend">
-        Enviar
-      </button>
-      <p>PS: Isso vai enviar um fake  UnbeliavaBoat, em breve mais bots :3</p>
       <p>💖 Created By <a href="https://sazz.fail">FelipeSazz</a></p>
+      <p>🛠 Código Fonte: <a href="https://github.com/Sazzo/FakeBan">Github</a></p>
     </form>
   </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
-import { Webhook } from 'discord-webhook-node'
+import { Webhook, MessageBuilder } from 'discord-webhook-node'
+import { Constants } from '../utils/Constants'
 export default Vue.extend({
   data () {
     return {
@@ -48,32 +90,61 @@ export default Vue.extend({
       name: '',
       avatar: '',
       userId: '',
+      bot: '',
+      reason: '',
+      message: '',
+      UserAvatar: '',
+      userTag: '',
       error: ''
     }
   },
   methods: {
     async createAndSend () {
       try {
-        if (!this.url) {
-          this.error = 'Você precisa especificar um URL válido!'
-          return
-        }
-        if (!this.userId) {
-          this.error = 'Você precisa especificar um ID de Usuário!'
-          return
+        if (this.bot === 'MEE6') {
+          if (!this.UserAvatar || !this.userTag) {
+            return
+          }
+        } else if (this.bot === 'UnbeliavaBoat' || this.bot === 'Loritta') {
+          if (!this.userId) {
+            return
+          }
+        } else if (this.bot === 'Custom') {
+          if (!this.avatar || !this.name || !this.message) {
+            return
+          }
         }
         const webhook = new Webhook(this.url)
-        if (this.name) {
-          webhook.setUsername(this.name)
-        } else {
-          webhook.setUsername('UnbeliavaBoat')
+        switch (this.bot) {
+          case 'Loritta': {
+            webhook.setAvatar(Constants.LORITTA_ICON)
+            webhook.setUsername('Loritta')
+            await webhook.send(Constants.LORITTA_MESSAGE.replace('$USERID', this.userId))
+            break
+          }
+          case 'UnbeliavaBoat': {
+            webhook.setAvatar(Constants.UNBELIEVA_ICON)
+            webhook.setUsername('UnbeliavaBoat')
+            await webhook.send(Constants.UNBELIEVA_MESSAGE.replace('$USERID', this.userId).replace('$CASE', '`Case #9458`'))
+            break
+          }
+          case 'MEE6': {
+            webhook.setAvatar(Constants.MEE6_ICON)
+            webhook.setUsername('MEE6')
+            const meeEmbed = new MessageBuilder()
+            meeEmbed.setAuthor(Constants.MEE6_EMBED.title.replace('$USERID', this.userTag), this.UserAvatar)
+            meeEmbed.setDescription(Constants.MEE6_EMBED.description.replace('$REASON', this.reason))
+            await webhook.send(meeEmbed)
+            break
+          }
+          case 'Custom': {
+            webhook.setAvatar(this.avatar)
+            webhook.setUsername(this.name)
+            await webhook.send(this.message)
+            break
+          }
         }
-        if (this.avatar) {
-          webhook.setAvatar(this.avatar)
-        } else {
-          webhook.setAvatar('https://cdn.discordapp.com/avatars/292953664492929025/c47af6e9bae8a91779996fa412b24207.png?size=2048')
-        }
-        await webhook.send(`<:_check:634831134571888641> \`Case #9458\` <@${this.userId}> has been banned.`)
+        // await webhook.send(`<:_check:634831134571888641> \`Case #9458\` <@${this.userId}> has been banned.`)
         this.error = 'Sucesso!'
       } catch (e) {
         this.error = e
@@ -92,35 +163,5 @@ export default Vue.extend({
   justify-content: center;
   align-items: center;
   text-align: center;
-}
-
-.title {
-  font-family:
-    'Quicksand',
-    'Source Sans Pro',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    Arial,
-    sans-serif;
-  display: block;
-  font-weight: 300;
-  font-size: 100px;
-  color: #35495e;
-  letter-spacing: 1px;
-}
-
-.subtitle {
-  font-weight: 300;
-  font-size: 42px;
-  color: #526488;
-  word-spacing: 5px;
-  padding-bottom: 15px;
-}
-
-.links {
-  padding-top: 15px;
 }
 </style>
